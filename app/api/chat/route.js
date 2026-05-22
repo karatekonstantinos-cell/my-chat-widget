@@ -1,5 +1,5 @@
-import { supabase } from "@/lib/supabase";
 import OpenAI from "openai";
+import { supabase } from "@/lib/supabase";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -9,18 +9,28 @@ export async function POST(req) {
   try {
     const { message, siteId } = await req.json();
 
+    if (!message || !siteId) {
+      return Response.json(
+        { reply: "Missing message or siteId" },
+        { status: 400 }
+      );
+    }
+
     // 1. Get site
-    const { data: site } = await supabase
+    const { data: site, error: siteError } = await supabase
       .from("sites")
       .select("*")
       .eq("id", siteId)
       .single();
 
-    if (!site) {
-      return Response.json({ reply: "Invalid siteId" }, { status: 400 });
+    if (siteError || !site) {
+      return Response.json(
+        { reply: "Invalid siteId" },
+        { status: 400 }
+      );
     }
 
-    // 2. Update usage count
+    // 2. Update usage safely
     await supabase
       .from("sites")
       .update({
@@ -34,7 +44,8 @@ export async function POST(req) {
       messages: [
         {
           role: "system",
-          content: "You are a helpful assistant embedded in a SaaS chat widget.",
+          content:
+            "You are a helpful assistant embedded in a SaaS chat widget.",
         },
         {
           role: "user",
@@ -43,9 +54,11 @@ export async function POST(req) {
       ],
     });
 
-    const reply = completion.choices[0].message.content;
+    const reply =
+      completion?.choices?.[0]?.message?.content ||
+      "No response from model";
 
-    // 4. Store message
+    // 4. Store message (non-blocking safety)
     await supabase.from("messages").insert({
       site_id: siteId,
       message,
@@ -55,7 +68,8 @@ export async function POST(req) {
     // 5. Return response
     return Response.json({ reply });
   } catch (err) {
-    console.error(err);
+    console.error("API ERROR:", err);
+
     return Response.json(
       { reply: "Server error" },
       { status: 500 }
