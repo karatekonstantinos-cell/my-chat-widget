@@ -8,11 +8,11 @@
   const SITE_ID =
     script?.getAttribute("data-site-id") || "demo";
 
-  const API_URL =
-    "https://YOUR-VERCEL-APP.vercel.app/api/chat";
+  // ✅ FIXED: use same-origin API (IMPORTANT)
+  const API_URL = "/api/chat";
 
   // =========================
-  // CREATE UI
+  // UI ELEMENTS
   // =========================
 
   const button = document.createElement("button");
@@ -83,7 +83,7 @@
   document.body.appendChild(box);
 
   // =========================
-  // MESSAGE UI
+  // CHAT BUBBLES
   // =========================
 
   function addMessage(text, type) {
@@ -141,7 +141,7 @@
   }
 
   // =========================
-  // SEND MESSAGE (SAAS CORE)
+  // SEND MESSAGE (FIXED)
   // =========================
 
   async function sendMessage(text) {
@@ -149,25 +149,18 @@
     showTyping();
 
     try {
-      const res = await fetch(
-        `${API_URL}?siteId=${encodeURIComponent(SITE_ID)}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ message: text }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error("Network error");
-      }
+      const res = await fetch(`${API_URL}?siteId=${SITE_ID}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: text }),
+      });
 
       const data = await res.json();
 
       removeTyping();
-      addMessage(data?.reply || "No response", "bot");
+      addMessage(data?.reply ?? "No response from server", "bot");
 
     } catch (err) {
       removeTyping();
@@ -177,7 +170,7 @@
   }
 
   // =========================
-  // TOGGLE + GREETING
+  // OPEN / CLOSE + GREETING
   // =========================
 
   button.onclick = () => {
