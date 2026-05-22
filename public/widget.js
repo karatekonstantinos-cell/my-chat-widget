@@ -1,7 +1,20 @@
 (function () {
   // =========================
-  // CHAT BUTTON
+  // SAAS CONFIG
   // =========================
+
+  const script = document.currentScript;
+
+  const SITE_ID =
+    script?.getAttribute("data-site-id") || "demo";
+
+  const API_URL =
+    "https://YOUR-VERCEL-APP.vercel.app/api/chat";
+
+  // =========================
+  // CREATE UI
+  // =========================
+
   const button = document.createElement("button");
   button.innerText = "💬";
 
@@ -20,9 +33,6 @@
     cursor: "pointer",
   });
 
-  // =========================
-  // CHAT BOX
-  // =========================
   const box = document.createElement("div");
 
   Object.assign(box.style, {
@@ -33,17 +43,15 @@
     height: "500px",
     background: "#fff",
     border: "1px solid #ddd",
-    borderRadius: "10px",
+    borderRadius: "12px",
     display: "none",
     flexDirection: "column",
     overflow: "hidden",
     zIndex: 999999,
     fontFamily: "Arial, sans-serif",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
   });
 
-  // =========================
-  // MESSAGES AREA
-  // =========================
   const messages = document.createElement("div");
 
   Object.assign(messages.style, {
@@ -55,9 +63,6 @@
     background: "#fafafa",
   });
 
-  // =========================
-  // INPUT
-  // =========================
   const input = document.createElement("input");
 
   Object.assign(input.style, {
@@ -68,11 +73,9 @@
     outline: "none",
     color: "#000",
     background: "#fff",
+    fontSize: "14px",
   });
 
-  // =========================
-  // APPEND ELEMENTS
-  // =========================
   box.appendChild(messages);
   box.appendChild(input);
 
@@ -80,18 +83,18 @@
   document.body.appendChild(box);
 
   // =========================
-  // ADD MESSAGE (BUBBLES)
+  // MESSAGE UI
   // =========================
+
   function addMessage(text, type) {
     const msg = document.createElement("div");
-
     msg.innerText = text;
 
     Object.assign(msg.style, {
       maxWidth: "80%",
       padding: "10px 12px",
       marginBottom: "10px",
-      borderRadius: "12px",
+      borderRadius: "14px",
       fontSize: "14px",
       lineHeight: "1.4",
       wordWrap: "break-word",
@@ -114,7 +117,10 @@
   // =========================
   // TYPING INDICATOR
   // =========================
+
   function showTyping() {
+    if (document.getElementById("typing")) return;
+
     const typing = document.createElement("div");
     typing.id = "typing";
     typing.innerText = "Our assistant is typing...";
@@ -131,47 +137,54 @@
   }
 
   function removeTyping() {
-    const el = document.getElementById("typing");
-    if (el) el.remove();
+    document.getElementById("typing")?.remove();
   }
 
   // =========================
-  // SEND MESSAGE
+  // SEND MESSAGE (SAAS CORE)
   // =========================
+
   async function sendMessage(text) {
     addMessage(text, "user");
     showTyping();
 
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: text }),
-      });
+      const res = await fetch(
+        `${API_URL}?siteId=${encodeURIComponent(SITE_ID)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message: text }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Network error");
+      }
 
       const data = await res.json();
 
       removeTyping();
-      addMessage(data.reply, "bot");
+      addMessage(data?.reply || "No response", "bot");
 
     } catch (err) {
       removeTyping();
       addMessage("Error connecting to server", "bot");
+      console.error(err);
     }
   }
 
   // =========================
-  // OPEN / CLOSE CHAT
+  // TOGGLE + GREETING
   // =========================
+
   button.onclick = () => {
-    const isOpen = box.style.display === "flex";
+    const open = box.style.display === "flex";
+    box.style.display = open ? "none" : "flex";
 
-    box.style.display = isOpen ? "none" : "flex";
-
-    // 👋 Greeting message on first open
-    if (!isOpen && messages.childElementCount === 0) {
+    if (!open && messages.childElementCount === 0) {
       addMessage("Hello, how may I help you?", "bot");
     }
   };
@@ -179,9 +192,10 @@
   // =========================
   // INPUT HANDLING
   // =========================
+
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && input.value.trim()) {
-      const text = input.value;
+      const text = input.value.trim();
       input.value = "";
       sendMessage(text);
     }

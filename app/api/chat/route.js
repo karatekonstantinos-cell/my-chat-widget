@@ -1,32 +1,42 @@
 import OpenAI from "openai";
 
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 export async function POST(req) {
   try {
-    const { message } = await req.json();
+    const { searchParams } = new URL(req.url);
+    const siteId = searchParams.get("siteId");
 
-    console.log("MESSAGE:", message);
-    console.log("KEY EXISTS:", !!process.env.OPENAI_API_KEY);
+    const body = await req.json();
+    const message = body.message;
 
-    const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    let systemPrompt = "You are a helpful assistant.";
+
+    if (siteId === "demo") {
+      systemPrompt = "You are a friendly website chatbot.";
+    }
 
     const response = await client.chat.completions.create({
       model: "gpt-4.1-mini",
       messages: [
-        { role: "system", content: "You are a helpful assistant." },
+        { role: "system", content: systemPrompt },
         { role: "user", content: message },
       ],
     });
 
+    const reply = response.choices?.[0]?.message?.content;
+
     return Response.json({
-      reply: response.choices[0].message.content,
+      reply: reply || "No response generated",
     });
 
-  } catch (err) {
-    console.error("FULL ERROR:", err); // IMPORTANT
+  } catch (error) {
+    console.error(error);
+
     return Response.json(
-      { error: err.message },
+      { reply: "Server error" },
       { status: 500 }
     );
   }
