@@ -98,7 +98,7 @@
  Object.assign(input.style, {
   flex: "1",
   padding: "12px",
-  border: "1px solid #ddd",
+  border: "1px solid #000000",
   borderRadius: "10px",
   outline: "none",
   fontSize: "14px",
