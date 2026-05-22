@@ -2,32 +2,31 @@
 
 import { useEffect, useState } from "react";
 
-type Site = {
-  id: string;
-  name: string;
-  messages_used: number;
-};
-
 export default function Dashboard() {
-  const [sites, setSites] = useState<Site[]>([]);
+  const [sites, setSites] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   async function loadSites() {
-    const res = await fetch("/api/sites");
-    const data = await res.json();
+    try {
+      const res = await fetch("/api/sites");
+      const data = await res.json();
 
-    setSites(data);
+      setSites(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load sites:", err);
+      setSites([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function createSite() {
     const name = prompt("Chatbot name");
-
     if (!name) return;
 
     await fetch("/api/sites", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     });
 
@@ -39,58 +38,25 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <main
-      style={{
-        padding: 40,
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
+    <main style={{ padding: 40, fontFamily: "Arial" }}>
       <h1>Dashboard 🚀</h1>
 
-      <button
-        onClick={createSite}
-        style={{
-          padding: "10px 16px",
-          marginBottom: 20,
-          cursor: "pointer",
-          borderRadius: 8,
-          border: "none",
-          background: "#111",
-          color: "#fff",
-        }}
-      >
+      <button onClick={createSite} style={{ marginBottom: 20 }}>
         Create Chatbot
       </button>
 
-      <div>
-        {sites.map((site) => (
-          <div
-            key={site.id}
-            style={{
-              padding: 16,
-              border: "1px solid #ddd",
-              marginBottom: 12,
-              borderRadius: 10,
-            }}
-          >
-            <h3>{site.name}</h3>
+      {loading && <p>Loading...</p>}
 
-            <p>
-              Messages Used: {site.messages_used}
-            </p>
+      {!loading && sites.length === 0 && (
+        <p>No chatbots yet</p>
+      )}
 
-            <code
-              style={{
-                display: "block",
-                marginTop: 10,
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {`<script src="https://my-chat-widget-xi.vercel.app/widget.js" data-site-id="${site.id}"></script>`}
-            </code>
-          </div>
-        ))}
-      </div>
+      {sites.map((site) => (
+        <div key={site.id || Math.random()} style={{ padding: 16 }}>
+          <h3>{site.name || "Unnamed bot"}</h3>
+          <p>Messages: {site.messages_used || 0}</p>
+        </div>
+      ))}
     </main>
   );
 }
