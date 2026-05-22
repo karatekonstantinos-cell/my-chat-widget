@@ -11,7 +11,14 @@ export default function Dashboard() {
       const res = await fetch("/api/sites");
       const data = await res.json();
 
-      setSites(Array.isArray(data) ? data : []);
+      console.log("API RESPONSE:", data);
+
+      if (!Array.isArray(data)) {
+        setSites([]);
+        return;
+      }
+
+      setSites(data);
     } catch (err) {
       console.error("Failed to load sites:", err);
       setSites([]);
