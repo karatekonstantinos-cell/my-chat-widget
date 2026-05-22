@@ -95,17 +95,16 @@
 
   const input = document.createElement("input");
 
- Object.assign(input.style, {
-  flex: "1",
-  padding: "12px",
-  border: "1px solid #000000",
-  borderRadius: "10px",
-  outline: "none",
-  fontSize: "14px",
-
-  color: "#111",        // ✅ FIX: text color visible
-  background: "#fff",   // ensure white background
-});
+  Object.assign(input.style, {
+    flex: "1",
+    padding: "12px",
+    border: "1px solid #000",
+    borderRadius: "10px",
+    outline: "none",
+    fontSize: "14px",
+    color: "#111",
+    background: "#fff",
+  });
 
   const sendBtn = document.createElement("button");
   sendBtn.innerText = "➤";
@@ -187,17 +186,22 @@
   }
 
   // =========================
-  // SEND MESSAGE
+  // SEND MESSAGE (SAAS FIXED)
   // =========================
   async function sendMessage(text) {
     addMessage(text, "user");
     showTyping();
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: text,
+          siteId: SITE_ID   // ✅ THIS IS THE SAAS FIX
+        }),
       });
 
       const raw = await res.text();

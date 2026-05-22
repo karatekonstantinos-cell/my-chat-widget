@@ -1,3 +1,4 @@
+import { supabase } from "@/lib/supabase";
 import OpenAI from "openai";
 
 const client = new OpenAI({
@@ -6,22 +7,34 @@ const client = new OpenAI({
 
 export async function POST(req) {
   try {
-    const body = await req.json();
-    const message = body.message;
+    const { message, siteId } = await req.json();
 
-    if (!message) {
-      return Response.json(
-        { reply: "No message provided" },
-        { status: 400 }
-      );
+    // 1. Get site
+    const { data: site } = await supabase
+      .from("sites")
+      .select("*")
+      .eq("id", siteId)
+      .single();
+
+    if (!site) {
+      return Response.json({ reply: "Invalid siteId" }, { status: 400 });
     }
 
-    const response = await client.chat.completions.create({
+    // 2. Update usage count
+    await supabase
+      .from("sites")
+      .update({
+        messages_used: (site.messages_used || 0) + 1,
+      })
+      .eq("id", siteId);
+
+    // 3. Call OpenAI
+    const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: "You are a helpful assistant inside a website chat widget.",
+          content: "You are a helpful assistant embedded in a SaaS chat widget.",
         },
         {
           role: "user",
@@ -30,15 +43,21 @@ export async function POST(req) {
       ],
     });
 
-    const reply = response.choices[0].message.content;
+    const reply = completion.choices[0].message.content;
 
+    // 4. Store message
+    await supabase.from("messages").insert({
+      site_id: siteId,
+      message,
+      response: reply,
+    });
+
+    // 5. Return response
     return Response.json({ reply });
-
-  } catch (error) {
-    console.error("Chat API Error:", error);
-
+  } catch (err) {
+    console.error(err);
     return Response.json(
-      { reply: "Server error occurred" },
+      { reply: "Server error" },
       { status: 500 }
     );
   }
