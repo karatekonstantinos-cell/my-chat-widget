@@ -1,8 +1,13 @@
 import OpenAI from "openai";
-import { supabase } from "@/lib/supabase";
+
+const apiKey = process.env.OPENAI_API_KEY;
+
+if (!apiKey) {
+  throw new Error("Missing OPENAI_API_KEY");
+}
 
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey,
 });
 
 export async function POST(req) {
