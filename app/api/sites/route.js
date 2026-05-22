@@ -33,3 +33,12 @@ export async function POST(req) {
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
     }
+
+    return Response.json(data);
+  } catch (err) {
+    return Response.json(
+      { error: "Invalid request" },
+      { status: 400 }
+    );
+  }
+}
