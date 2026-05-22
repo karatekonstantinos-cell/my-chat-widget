@@ -145,29 +145,32 @@
   // =========================
 
   async function sendMessage(text) {
-    addMessage(text, "user");
-    showTyping();
+  addMessage(text, "user");
+  showTyping();
 
-    try {
-      const res = await fetch(`${API_URL}?siteId=${SITE_ID}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: text }),
-      });
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message: text }),
+    });
 
-      const data = await res.json();
+    const raw = await res.text();
+    console.log("RAW RESPONSE:", raw);
 
-      removeTyping();
-      addMessage(data?.reply ?? "No response from server", "bot");
+    const data = JSON.parse(raw);
 
-    } catch (err) {
-      removeTyping();
-      addMessage("Error connecting to server", "bot");
-      console.error(err);
-    }
+    removeTyping();
+    addMessage(data.reply, "bot");
+
+  } catch (err) {
+    removeTyping();
+    addMessage("Error connecting to server", "bot");
+    console.error(err);
   }
+}
 
   // =========================
   // OPEN / CLOSE + GREETING
