@@ -2,8 +2,14 @@
 
 import { useEffect, useState } from "react";
 
+type Site = {
+  id: string;
+  name: string;
+  messages_used: number;
+};
+
 export default function Dashboard() {
-  const [sites, setSites] = useState([]);
+  const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function loadSites() {
@@ -31,13 +37,19 @@ export default function Dashboard() {
     const name = prompt("Chatbot name");
     if (!name) return;
 
-    await fetch("/api/sites", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
+    try {
+      await fetch("/api/sites", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name }),
+      });
 
-    loadSites();
+      loadSites();
+    } catch (err) {
+      console.error("Failed to create site:", err);
+    }
   }
 
   useEffect(() => {
@@ -48,7 +60,14 @@ export default function Dashboard() {
     <main style={{ padding: 40, fontFamily: "Arial" }}>
       <h1>Dashboard 🚀</h1>
 
-      <button onClick={createSite} style={{ marginBottom: 20 }}>
+      <button
+        onClick={createSite}
+        style={{
+          marginBottom: 20,
+          padding: "10px 14px",
+          cursor: "pointer",
+        }}
+      >
         Create Chatbot
       </button>
 
@@ -59,9 +78,21 @@ export default function Dashboard() {
       )}
 
       {sites.map((site) => (
-        <div key={site.id || Math.random()} style={{ padding: 16 }}>
-          <h3>{site.name || "Unnamed bot"}</h3>
-          <p>Messages: {site.messages_used || 0}</p>
+        <div
+          key={site.id}
+          style={{
+            padding: 16,
+            border: "1px solid #ddd",
+            marginBottom: 10,
+            borderRadius: 8,
+          }}
+        >
+          <h3>{site.name}</h3>
+          <p>Messages: {site.messages_used}</p>
+
+          <code>
+            {`<script src="https://my-chat-widget-xi.vercel.app/widget.js" data-site-id="${site.id}"></script>`}
+          </code>
         </div>
       ))}
     </main>
