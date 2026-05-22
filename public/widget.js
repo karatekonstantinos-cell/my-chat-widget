@@ -95,14 +95,17 @@
 
   const input = document.createElement("input");
 
-  Object.assign(input.style, {
-    flex: "1",
-    padding: "12px",
-    border: "1px solid #ddd",
-    borderRadius: "10px",
-    outline: "none",
-    fontSize: "14px",
-  });
+ Object.assign(input.style, {
+  flex: "1",
+  padding: "12px",
+  border: "1px solid #ddd",
+  borderRadius: "10px",
+  outline: "none",
+  fontSize: "14px",
+
+  color: "#111",        // ✅ FIX: text color visible
+  background: "#fff",   // ensure white background
+});
 
   const sendBtn = document.createElement("button");
   sendBtn.innerText = "➤";
